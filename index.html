@@ -1,0 +1,178 @@
+<!-- Tutorial from https://gamedevacademy.org/how-to-make-a-mario-style-platformer-with-phaser-3/?a=13 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script src="src/phaser.js"></script>
+</head>
+<body>
+	<script type="text/javascript">
+	
+
+		var config = {
+			type : Phaser.AUTO,
+			width: 800,
+			height: 96,
+			physics:{
+				default: 'arcade',
+				arcade: {
+					gravity: {y: 1200},
+					debug: false
+				}
+			},
+			scene:{
+				key : 'main',
+				preload: preload,
+				create: create,
+				update: update
+			}
+		}
+
+		var game = new Phaser.Game( config );
+
+		var map;
+		var player;
+		var cursors;
+		var groundLayer;
+		var groundTiles;
+		var text;
+
+		/**
+		 * [preload: This function is used to load the assets for our game]
+		 * @return {[void]} [Returns void]
+		 */
+		function preload(){
+			//map made with Tiled in JSON format
+			this.load.tilemapTiledJSON('map', 'Assets/flatmap.json');
+
+			//title in spritesheet
+			this.load.spritesheet('flattiles','Assets/flattiles.png', {frameWidth: 16, frameHeight: 16});
+
+			this.load.atlas('player', 'assets/player1.png', 'assets/player.json');
+
+
+		}
+
+		/**
+		 * [create: places assets on the screen]
+		 * @return {[void]} [Returns void]
+		 */
+		function create(){
+
+			//WORLD
+				//load map
+				map = this.make.tilemap({key: 'map'});
+
+				//tiles for the ground layer
+
+
+				var groundTiles = map.addTilesetImage('flattiles');
+
+				backLayer = map.createDynamicLayer('Background', groundTiles, 0, 0);
+
+				groundLayer = map.createDynamicLayer('World', groundTiles, 0, 0);
+
+				//create the ground layer
+
+				//The player will collide with this layer
+				groundLayer.setCollisionByExclusion([-1]);
+
+				//set the boundaries of our game world
+				this.physics.world.bounds.width 	= groundLayer.width;
+				this.physics.world.bounds.height 	= groundLayer.height;
+
+
+			//PLAYER
+				
+				player = this.physics.add.sprite(0,288, 'player');
+				player.setBounce(0);
+				player.setCollideWorldBounds(true);
+
+				//Add Keyboard Events
+				cursors = this.input.keyboard.createCursorKeys();
+
+
+			//CAMERA
+				
+				//set bounds so the camera won't go outside the game world
+				this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
+				//make the camera follow the player
+				this.cameras.main.startFollow(player);
+
+				//set background color, so the sky is not black
+				this.cameras.main.setBackgroundColor('#000000');
+
+			//ANIMATION
+			
+				this.anims.create({
+					key : "walk",
+					frames: this.anims.generateFrameNames('player', {prefix: 'p1_walk', start: 1, end: 2, zeroPad: 2}),
+					frameRate: 10,
+					repeat: -1 // loop forever
+				});
+
+				this.anims.create({
+					key: 'idle',
+					frames: [{key: 'player', frame: 'p1_stand'}],
+					frameRate : 10
+				})
+
+
+
+
+			//OBJECT COLLISIONS
+			
+				//Collision between floor and player
+				this.physics.add.collider(groundLayer, player);
+
+		}
+
+		/**
+		 * [update is the main game loop]
+		 * @return {[void]} [Returns void]
+		 */
+		function update(){
+			//EVENTS / MECHANICS
+				
+				if((cursors.up.isDown && player.body.onFloor()) ){
+					
+					player.body.setVelocityY(-300);
+				}
+				
+				if( cursors.left.isDown ){ // If the left arrow key is pressed down
+					//activate motion
+					if( cursors.left.shiftKey){
+						player.setVelocityX(-600);
+					}else{
+						player.setVelocityX(-200);
+					};
+					//activate animation
+					player.anims.play('walk', true);
+
+					//flip image horizontally
+					player.flipX = true;
+
+				}else if(cursors.right.isDown){  // If the right arrow key is pressed down
+					//activate motion
+					if( cursors.right.shiftKey){
+						player.setVelocityX(600);
+					}else{
+						player.setVelocityX(200);
+					};
+					//activate animation
+					player.anims.play('walk', true);
+
+					//flip image horizontally
+					player.flipX = false;
+
+				}else {
+					player.setVelocityX(0);
+					player.anims.play('idle', true);
+				}
+		}
+	</script>	
+	
+</body>
+</html>
